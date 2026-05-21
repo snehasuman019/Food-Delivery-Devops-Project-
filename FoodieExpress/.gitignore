@@ -1,0 +1,21 @@
+# Node dependencies
+node_modules/
+dist/
+build/
+.npm
+package-lock.json
+
+# Python dependencies
+venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+
+# Log files
+*.log

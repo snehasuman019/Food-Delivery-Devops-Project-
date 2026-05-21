@@ -1,0 +1,17 @@
+# Ignore node packages
+**/node_modules
+**/dist
+**/build
+
+# Ignore python virtual environments and caches
+**/venv
+**/.env
+**/__pycache__
+**/*.pyc
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore logs
+*.log

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foodieexpress-frontend
+  labels:
+    app: foodieexpress-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: foodieexpress-frontend
+  template:
+    metadata:
+      labels:
+        app: foodieexpress-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: foodieexpress/frontend:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: VITE_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: foodieexpress-config
+                  key: VITE_API_URL
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foodieexpress-frontend-service
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: foodieexpress-frontend
+  type: LoadBalancer

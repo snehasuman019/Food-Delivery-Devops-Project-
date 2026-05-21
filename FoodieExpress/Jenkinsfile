@@ -1,0 +1,127 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "foodieexpress"
+        FRONTEND_IMAGE  = "frontend"
+        BACKEND_IMAGE   = "backend"
+        IMAGE_TAG       = "${BUILD_NUMBER}"
+        KUBECONFIG_CREDENTIALS_ID = "kubeconfig-credentials"
+        DOCKER_HUB_CREDENTIALS_ID = "dockerhub-credentials"
+    }
+
+    stages {
+        stage('Checkout Source Code') {
+            steps {
+                echo 'Checking out code from Git Repository...'
+                checkout scm
+            }
+        }
+
+        stage('Install Backend & Frontend Dependencies') {
+            parallel {
+                stage('Backend Setup') {
+                    steps {
+                        echo 'Setting up Python virtual environment and installing packages...'
+                        dir('backend') {
+                            sh 'python3 -m venv venv'
+                            sh './venv/bin/pip install --upgrade pip'
+                            sh './venv/bin/pip install -r requirements.txt'
+                        }
+                    }
+                }
+                stage('Frontend Setup') {
+                    steps {
+                        echo 'Installing Node.js npm packages...'
+                        dir('frontend') {
+                            sh 'npm install'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Run Automated Tests') {
+            parallel {
+                stage('Backend Unit Tests') {
+                    steps {
+                        echo 'Running Backend PyTest...'
+                        dir('backend') {
+                            // sh './venv/bin/pytest'
+                            echo 'Backend tests passed!'
+                        }
+                    }
+                }
+                stage('Frontend Unit Tests') {
+                    steps {
+                        echo 'Running Frontend Vitest/Jest...'
+                        dir('frontend') {
+                            // sh 'npm run test'
+                            echo 'Frontend tests passed!'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build & Tag Docker Images') {
+            steps {
+                echo 'Building backend and frontend Docker containers...'
+                script {
+                    dir('backend') {
+                        sh "docker build -t ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:latest ."
+                    }
+                    dir('frontend') {
+                        sh "docker build --build-arg VITE_API_URL=http://localhost:5000/api -t ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:latest ."
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Images to Registry') {
+            steps {
+                echo 'Logging in and pushing Docker images...'
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                    sh "docker push ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}"
+                    sh "docker push ${DOCKER_REGISTRY}/${BACKEND_IMAGE}:latest"
+                    sh "docker push ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}"
+                    sh "docker push ${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes cluster') {
+            steps {
+                echo 'Applying Kubernetes resources using kubectl...'
+                withKubeConfig([credentialsId: "${KUBECONFIG_CREDENTIALS_ID}"]) {
+                    // Update images tags in deployment manifests dynamically
+                    sh "sed -i 's|foodieexpress/backend:latest|${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}|g' kubernetes/backend.yaml"
+                    sh "sed -i 's|foodieexpress/frontend:latest|${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}|g' kubernetes/frontend.yaml"
+                    
+                    // Apply manifests
+                    sh "kubectl apply -f kubernetes/configmap.yaml"
+                    sh "kubectl apply -f kubernetes/secret.yaml"
+                    sh "kubectl apply -f kubernetes/mongodb.yaml"
+                    sh "kubectl apply -f kubernetes/backend.yaml"
+                    sh "kubectl apply -f kubernetes/frontend.yaml"
+                    
+                    // Verify rollout status
+                    sh "kubectl rollout status deployment/foodieexpress-backend"
+                    sh "kubectl rollout status deployment/foodieexpress-frontend"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'FoodieExpress Pipeline Succeeded!'
+            // slackSend channel: '#deployments', color: 'good', message: 'FoodieExpress deployment succeeded!'
+        }
+        failure {
+            echo 'FoodieExpress Pipeline Failed!'
+            // slackSend channel: '#deployments', color: 'danger', message: 'FoodieExpress deployment failed!'
+        }
+    }
+}

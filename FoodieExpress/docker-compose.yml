@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: foodie_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - foodie_network
+    restart: unless-stopped
+
+  # 2. Flask API Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: foodie_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/foodieexpress
+      - JWT_SECRET_KEY=foodieexpress-compose-jwt-secret-key-2024
+      - FLASK_ENV=production
+      - FLASK_PORT=5000
+    depends_on:
+      - mongodb
+    networks:
+      - foodie_network
+    restart: unless-stopped
+
+  # 3. React SPA Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5000/api
+    container_name: foodie_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - foodie_network
+    restart: unless-stopped
+
+networks:
+  foodie_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local

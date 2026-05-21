@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foodieexpress-backend
+  labels:
+    app: foodieexpress-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: foodieexpress-backend
+  template:
+    metadata:
+      labels:
+        app: foodieexpress-backend
+    spec:
+      containers:
+        - name: backend
+          image: foodieexpress/backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: foodieexpress-secret
+                  key: MONGO_URI
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: foodieexpress-secret
+                  key: JWT_SECRET_KEY
+            - name: FLASK_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: foodieexpress-config
+                  key: FLASK_ENV
+            - name: FLASK_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: foodieexpress-config
+                  key: FLASK_PORT
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foodieexpress-backend-service
+spec:
+  ports:
+    - port: 5000
+      targetPort: 5000
+  selector:
+    app: foodieexpress-backend
+  type: ClusterIP
