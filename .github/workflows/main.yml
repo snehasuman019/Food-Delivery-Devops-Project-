@@ -1,0 +1,57 @@
+name: FoodieExpress CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd FoodieExpress/frontend
+          npm install
+
+      - name: Build Frontend
+        run: |
+          cd FoodieExpress/frontend
+          npm run build
+
+      - name: Build Frontend Docker Image
+        run: |
+          cd FoodieExpress/frontend
+          docker build -t foodie-frontend .
+
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install Backend Dependencies
+        run: |
+          cd FoodieExpress/backend
+          pip install -r requirements.txt
+
+      - name: Build Backend Docker Image
+        run: |
+          cd FoodieExpress/backend
+          docker build -t foodie-backend .
