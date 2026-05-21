@@ -135,7 +135,7 @@ Includes:
 
 ## 🔐 Login Page
 
-![Login](./screenshots/Login Page.png)
+![Login](./screenshots/login-page.png)
 
 ---
 ## Docker Running
@@ -148,7 +148,7 @@ Includes:
 
 (Add Screenshot Here)
 
-![GitHub Actions](./screenshots/Github Actions.png)
+![GitHub Actions](./screenshots/github-actions.png)
 ---
 
 
