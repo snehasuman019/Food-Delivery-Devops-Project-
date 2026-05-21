@@ -129,7 +129,6 @@ Includes:
 
 ## Home Page
 ![Home Page](./screenshots/Homepage.png)
-(Add Screenshot Here)
 
 ---
 
@@ -140,13 +139,10 @@ Includes:
 ---
 ## Docker Running
 
-(Add Screenshot Here)
 ![Docker](./screenshots/Docker.png)
 ---
 
 ## GitHub Actions CI/CD
-
-(Add Screenshot Here)
 
 ![GitHub Actions](./screenshots/github-actions.png)
 ---
