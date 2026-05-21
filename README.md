@@ -128,23 +128,23 @@ Includes:
 # 🖥️ Screenshots
 
 ## Home Page
-![Home Page](./screenshots/Homepage.png)
+![Home Page](./FoodieExpress/screenshots/Homepage.png)
 
 ---
 
 ## 🔐 Login Page
 
-![Login](./screenshots/login-page.png)
+![Login](./FoodieExpress/screenshots/login-page.png)
 
 ---
 ## Docker Running
 
-![Docker](./screenshots/Docker.png)
+![Docker](./FoodieExpress/screenshots/Docker.png)
 ---
 
 ## GitHub Actions CI/CD
 
-![GitHub Actions](./screenshots/github-actions.png)
+![GitHub Actions](./FoodieExpress/screenshots/github-actions.png)
 ---
 
 
